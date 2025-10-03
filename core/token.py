@@ -8,18 +8,20 @@ load_dotenv()
 
 class Token:
     def __init__(self):
-        self.ACCESS_SECRET_KEY=os.getenv("ACCESS_SECRET_KEY")
-        self.ACCESS_EXPIRE_MINUTES=os.getenv("ACCESS_EXPIRE_MINUTES")
+        self.ACCESS_TOKEN_KEY=os.getenv("ACCESS_TOKEN_KEY")
         self.REFRESH_TOKEN_KEY=os.getenv("REFRESH_TOKEN_KEY")
-        self.REFRESH_TOKEN_EXPIRE_DAYS=os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")
         self.SIGNUP_KEY=os.getenv("SIGNUP_KEY")
         self.ALGORITHM=os.getenv("ALGORITHM")
+        if not all([self.ACCESS_TOKEN_KEY, self.REFRESH_TOKEN_KEY, self.SIGNUP_KEY]):
+            raise ValueError("One or more JWT secret keys are missing from the environment variables")
+        self.ACCESS_EXPIRE_MINUTES=int(os.getenv("ACCESS_EXPIRE_MINUTES", "30"))
+        self.REFRESH_TOKEN_EXPIRE_DAYS=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "180"))
         
     def create_access_token(self, data:dict):
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_EXPIRE_MINUTES)
         to_encode.update({"exp" : expire})
-        return jwt.encode(to_encode, self.ACCESS_SECRET_KEY, algorithm=self.ALGORITHM)
+        return jwt.encode(to_encode, self.ACCESS_TOKEN_KEY, algorithm=self.ALGORITHM)
         
     def create_refresh_token(self, data:dict):
         to_encode = data.copy()
@@ -35,7 +37,7 @@ class Token:
     
     def verify_token(self, token:str, is_refresh:bool=False):
         try:
-            secret_key = self.REFRESH_TOKEN_KEY if is_refresh else self.ACCESS_SECRET_KEY
+            secret_key = self.REFRESH_TOKEN_KEY if is_refresh else self.ACCESS_TOKEN_KEY
             payload = jwt.decode(token, secret_key, algorithms=[self.ALGORITHM])
             return payload
         except JWTError as je:
@@ -52,7 +54,7 @@ class Token:
     async def blacklist_token(self, token:str, redis:Redis):
         try:
             payload = jwt.decode(token, 
-                                 self.ACCESS_SECRET_KEY, 
+                                 self.ACCESS_TOKEN_KEY, 
                                  algorithms=[self.ALGORITHM],
                                  options={"verify_exp" : False})
             expire_time = payload.get("exp")
