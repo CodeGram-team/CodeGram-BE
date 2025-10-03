@@ -28,7 +28,7 @@ async def handle_login_success(user:User, redis:Redis) -> TokenResponse:
     )
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
-@oauth_router.post("/auth/google", response_model=GoogleLoginResponse)
+@oauth_router.post("/google/auth", response_model=GoogleLoginResponse)
 async def google_auth(request:GoogleLoginRequest,
                       db:AsyncSession=Depends(get_db),
                       redis:Redis=Depends(get_redis_client)):
