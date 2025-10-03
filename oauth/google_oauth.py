@@ -11,7 +11,7 @@ from models.user import User, SocialAccount
 
 load_dotenv()
 
-GOOGLE_CLIENT_KEY=os.getenv("GOOGLE_CLIENT_KEY")
+GOOGLE_CLIENT_ID=os.getenv("GOOGLE_CLIENT_ID")
 
 async def verify_google_id_token(token:str)->dict:
     """
@@ -22,7 +22,7 @@ async def verify_google_id_token(token:str)->dict:
         id_info = id_token.verify_oauth2_token(
             token,
             google_requests.Request(),
-            GOOGLE_CLIENT_KEY
+            GOOGLE_CLIENT_ID
         )
         
         if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
