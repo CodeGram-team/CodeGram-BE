@@ -73,7 +73,7 @@ async def google_complete_signup(
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis_client)
 ):
-    """2단계: Signup Token과 닉네임으로 최종 회원가입을 완료합니다."""
+    """2단계: Signup Token과 닉네임으로 최종 회원가입 완료."""
     signup_data = token_instance.verify_signup_token(request.signup_token)
 
     if await get_user_by_field(db, field="nickname", value=request.nickname):

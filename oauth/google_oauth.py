@@ -78,7 +78,7 @@ async def create_user_with_social_account(db:AsyncSession,
                                           nickname:str,
                                           profile_image_url:str,
                                           provider:str,
-                                          provideer_user_id:str)->User:
+                                          provider_user_id:str)->User:
     """
     새로운 사용자와 소셜 계정 정보 동시 생성
     Args:
@@ -97,7 +97,7 @@ async def create_user_with_social_account(db:AsyncSession,
     new_social_account = SocialAccount(
         user_id = new_user.id,
         provider=provider,
-        provider_user_id=provideer_user_id
+        provider_user_id=provider_user_id
     )
     db.add(new_social_account)
     await db.commit()
