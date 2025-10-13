@@ -1,18 +1,18 @@
 import uvicorn 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from db.mongodb import connect_to_mongo, close_mongo_connection
+from db.mongodb import init_db, close_connection
 from db.rmq import rmq_client
 from api.v1.auth import oauth_router
 from api.v1.execution import execution_router
 
 async def start():
-    await connect_to_mongo()
+    await init_db()
     await rmq_client.connect()
     print("Application startup complete")
     
 async def shutdown():
-    await close_mongo_connection()
+    await close_connection()
     await rmq_client.close()
     print("Application shutdown")
     

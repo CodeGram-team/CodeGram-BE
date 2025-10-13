@@ -1,36 +1,56 @@
 from pymongo import AsyncMongoClient
-from pymongo.asynchronous.database import AsyncDatabase
+from beanie import init_beanie
 from dotenv import load_dotenv
 import os
-load_dotenv()
+from models.post import Post
 
+load_dotenv()
 MONGODB_URL=os.getenv("MONGODB_URL")
+
 class DBMongo:
     client : AsyncMongoClient = None
-    db : AsyncDatabase = None
+    db = None
     
 db_client = DBMongo()
 
-async def connect_to_mongo():
-    """
-    Connect MongoDB when start application
-    """
-    db_client.client = AsyncMongoClient(MONGODB_URL)
-    db_client.db = db_client.client.get_database("codegram")
-    
+async def init_db():
     try:
+        
+        db_client.client = AsyncMongoClient(MONGODB_URL)
+        db_client.db = db_client.client.get_database("codegram")
         await db_client.client.server_info()
-        print("MongoDB connection success")
+        await init_beanie(database=db_client.db, document_models=[Post])
+        print("MongoDB Connection success")
+        
     except Exception as e:
-        print(f"MongoDB connection failed: {e}")
+        print(f"MongoDB Connection failed: {e}")
 
-async def close_mongo_connection():
-    print("Close MongoDB..")
+async def close_connection():
+    print("Closing MongoDB connection")
     if db_client.client:
-        await db_client.client.close()
+        db_client.client.close()
+        print("MongoDB connetion closed")
 
-async def get_mongo():
-    if db_client.db is None:
-        raise Exception("MongoDB is not connected")
-    return db_client.db
+# async def connect_to_mongo():
+#     """
+#     Connect MongoDB when start application
+#     """
+#     db_client.client = AsyncMongoClient(MONGODB_URL)
+#     db_client.db = db_client.client.get_database("codegram")
+    
+#     try:
+#         await db_client.client.server_info()
+#         print("MongoDB connection success")
+#     except Exception as e:
+#         print(f"MongoDB connection failed: {e}")
+
+# async def close_mongo_connection():
+#     print("Close MongoDB..")
+#     if db_client.client:
+#         await db_client.client.close()
+
+# async def get_mongo():
+#     if db_client.db is None:
+#         raise Exception("MongoDB is not connected")
+#     return db_client.db
         
