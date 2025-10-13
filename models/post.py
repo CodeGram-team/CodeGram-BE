@@ -11,6 +11,11 @@ class Comment(BaseModel):
     authorNickname: str
     content:str
     createdAt: datetime=Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    # ObjectId 타입 에러 해결
+    model_config = {
+        "arbitrary_types_allowed" : True   
+    }
 
 class Post(Document):
     # Author Information
