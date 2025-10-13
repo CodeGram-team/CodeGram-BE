@@ -5,12 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aio-pika>=9.5.7",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
-    "beanie>=2.0.0",
+    "beanie[srv]>=2.0.0",
     "fastapi>=0.118.0",
     "google-auth>=2.40.3",
+    "httpx>=0.28.1",
     "pymongo>=4.15.1",
+    "pytest>=8.4.2",
     "python-dotenv>=1.1.1",
     "python-jose>=3.5.0",
     "redis>=6.4.0",
