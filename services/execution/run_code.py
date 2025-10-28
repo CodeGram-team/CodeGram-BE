@@ -1,38 +1,43 @@
 import uuid
 from redis.asyncio import Redis
-import asyncio
 import json
 from db.rmq import rmq_client
-from schema.execution import CodeExecutionRequest, CodeExecutionResponse
+from schema.stream import StreamRequest
 
-async def code_execution(request:CodeExecutionRequest, redis:Redis)->CodeExecutionResponse:
+"""
+# TODO: Redis Pub/Sub에서 RabbitMQ RPC pattern으로 교체 예정
+결과를 스트리밍 할 것인지, 한 번에 처리하여 보여줄 것인지 결정할 것
+""" 
+async def reverse_streamin_job(request:StreamRequest, redis:Redis)->str:
+    
+    job_id = str(uuid.uuid4())
+    await redis.set(f"job_info:{job_id}", json.dumps(request.model_dump()), ex=60)
+    
+    return job_id
+
+async def code_execution(job_id:str, redis:Redis):
     """
     사용자 게시글 올리기 전 코드 실행할 수 있는 함수
+    실시간 스트리밍 
+    Args:
+    - request:
+    - redis:
+    Returns:
+    - 
     """
-    job_id = str(uuid.uuid4())
-    response_channel = f"result:{job_id}"
+    job_info_str = await redis.get(f"job_info:{job_id}")
+    if not job_info_str:
+        print(f"Job info not found for job_id:{job_id}")
+        return
+    
+    job_info = json.loads(job_info_str)
+    response_channel = f"stream:{job_id}"
+    
     job_data = {
         "job_id" : job_id,
-        "language" : request.language,
-        "code" : request.code,
-        "response_channel" : response_channel
+        "language" : job_info["language"],
+        "code" : job_info["code"],
+        "response_channel" : response_channel,
+        "stream" : True
     }
-    # STEP 1. 결과를 수신할 임시 채널 구독 
-    pubsub = redis.pubsub()
-    await pubsub.subscribe(response_channel)
-    
-    # STEP 2. RabbitMQ 작업 큐에 코드 실행 요청 발행
-    await rmq_client.publish_message("code_execution_queue", message_body=job_data)
-    
-    try:
-        async with asyncio.timeout(10):
-            async for message in pubsub.listen():
-                if message["type"] == "message":
-                    result_data = json.loads(message["data"])
-                    return CodeExecutionResponse(**result_data)
-    except asyncio.TimeoutError:
-        return CodeExecutionResponse(
-            status="error", stdout="", stderr="Execution timed out while wating for result", execution_time=10.0
-        )
-    finally:
-        await pubsub.unsubscribe(response_channel)
+    await rmq_client.publish_message(queue_name="code_execution_queue", message_body=job_data)
