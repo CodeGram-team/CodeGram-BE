@@ -1,12 +1,13 @@
-from beanie import Document
+from beanie import Document, PydanticObjectId, Indexed
+from pymongo import IndexModel
 from pydantic import Field, BaseModel
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, Annotated
 from uuid import UUID
-from bson import ObjectId
+# from bson import ObjectId
 
 class Comment(BaseModel):
-    commentId: ObjectId = Field(default_factory=ObjectId)
+    commentId: PydanticObjectId = Field(default_factory=PydanticObjectId)
     authorId: UUID
     authorNickname: str
     content:str
@@ -21,7 +22,7 @@ class Post(Document):
     # Author Information
     authorId: UUID
     authorNickname:str
-    authorProfileImage:Optional[str] = None
+    authorProfileImageUrl:Optional[str] = None
     # Post Information
     title:str = Field(..., min_length=1, max_length=100)
     description:Optional[str] = None
@@ -30,7 +31,7 @@ class Post(Document):
     # Metadata & social function
     tags: List[str] = []
     vibeEmojis : List[str] = []
-    likeCount:int = 0
+    likesCount:int = 0
     # Embedded document
     comments: List[Comment]
     # Timestamp
@@ -39,3 +40,14 @@ class Post(Document):
     class Settings:
         # MongoDB Collection name
         name = "posts" 
+        
+class Like(Document):
+    userId: Annotated[UUID, Indexed(unique=True)]
+    postId: Annotated[PydanticObjectId, Indexed(unique=True)]
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    class Settings:
+        name = "likes"
+        indexes = [
+            IndexModel([("userId",1),("postId",1)], unique=True)
+        ]
