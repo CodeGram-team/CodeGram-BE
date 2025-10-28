@@ -12,6 +12,7 @@ dependencies = [
     "fastapi>=0.118.0",
     "google-auth>=2.40.3",
     "httpx>=0.28.1",
+    "pgvector>=0.4.1",
     "pymongo>=4.15.1",
     "pytest>=8.4.2",
     "python-dotenv>=1.1.1",
