@@ -20,8 +20,10 @@ class Token:
     def create_access_token(self, data:dict):
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_EXPIRE_MINUTES)
+        expires_time = int(expire.timestamp())
         to_encode.update({"exp" : expire})
-        return jwt.encode(to_encode, self.ACCESS_TOKEN_KEY, algorithm=self.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, self.ACCESS_TOKEN_KEY, algorithm=self.ALGORITHM)
+        return encoded_jwt, expires_time
         
     def create_refresh_token(self, data:dict):
         to_encode = data.copy()

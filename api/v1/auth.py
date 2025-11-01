@@ -5,7 +5,7 @@ from datetime import timedelta
 from db.database import get_db
 from db.redis import get_redis_client
 from schema.google_oauth import GoogleLoginRequest, SignUpCompletionRequest
-from schema.token import TokenResponse, GoogleLoginResponse
+from schema.token import TokenResponse, GoogleLoginResponse, RefreshTokenRequest
 from oauth.google_oauth import get_social_account, get_user_by_field, verify_google_id_token, create_user_with_social_account
 from core.token import Token
 from models.user import User
@@ -18,7 +18,7 @@ async def handle_login_success(user:User, redis:Redis) -> TokenResponse:
     """
     로그인 및 회원가입 성공 시 토큰 생성 및 Redis 저장 처리 
     """
-    access_token = token_instance.create_access_token(data={"sub" : str(user.id)})
+    access_token, expires_time = token_instance.create_access_token(data={"sub" : str(user.id)})
     refresh_token = token_instance.create_refresh_token(data={"sub":str(user.id)})
     ttl = timedelta(days=token_instance.REFRESH_TOKEN_EXPIRE_DAYS)
     await redis.setex(
@@ -26,7 +26,9 @@ async def handle_login_success(user:User, redis:Redis) -> TokenResponse:
         ttl,
         refresh_token
     )
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return TokenResponse(access_token=access_token, 
+                         refresh_token=refresh_token,
+                         expires_time=expires_time)
 
 @oauth_router.post("/google/auth", response_model=GoogleLoginResponse)
 async def google_auth(request:GoogleLoginRequest,
@@ -47,7 +49,8 @@ async def google_auth(request:GoogleLoginRequest,
         return GoogleLoginResponse(
             status="login",
             access_token=token_data.access_token,
-            refresh_token=token_data.refresh_token
+            refresh_token=token_data.refresh_token,
+            expires_time=token_data.expires_time
         )
     else:
         # -- Singup 처리 --
@@ -89,6 +92,47 @@ async def google_complete_signup(
         provider_user_id=signup_data["provider_user_id"]
     )
 
+    return await handle_login_success(user, redis)
+
+@oauth_router.post("/refresh", response_model=TokenResponse)
+async def refresh_access_token(request:RefreshTokenRequest,
+                               db:AsyncSession=Depends(get_db),
+                               redis:Redis=Depends(get_redis_client)):
+    """
+    Args:
+    - request: RefreshTokenRequest({"refresh_token" : str})
+    - db: SQLAlchemy Session
+    - redis: Redis Dependency Injection Function
+    
+    Returns:
+    - TokenResponse: {access token, refresh token, token type}
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = token_instance.verify_token(request.refresh_token, is_refresh=True)
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+            
+    except Exception:
+        raise credentials_exception
+
+    stored_token_bytes = await redis.get(f"refresh_token:{user_id}")
+    
+    if not stored_token_bytes:
+        raise credentials_exception
+        
+    if stored_token_bytes != request.refresh_token:
+        raise credentials_exception
+
+    user = await get_user_by_field(db, field="id", value=user_id)
+    if user is None:
+        raise credentials_exception
+        
     return await handle_login_success(user, redis)
 
 @oauth_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
