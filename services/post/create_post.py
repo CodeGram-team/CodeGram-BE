@@ -14,9 +14,7 @@ async def create_new_post(post_data:PostCreate, user:User)->Post:
     """
     게시물 생성 후 포스팅
     포스팅 시 AI 서버에 정적 분석 및 이모지 할당 받아야 함
-    AI 서버는 3 단계로 나누어 응답 -> saftey, warning, danger 
-    saftey, warning 시에는 통과 -> 이모지 할당 받은 후 게시글 포스팅
-    danger 시에는 불통
+    AI 서버는 3 단계로 나누어 응답 -> allow, sandbox, block
     Args:
     - post_data : PostCreate(title, description, code, language, tags)
     - user: user id, nickname 조회
@@ -28,17 +26,9 @@ async def create_new_post(post_data:PostCreate, user:User)->Post:
         user_id = user.id
         nickname = user.nickname
         profile_url = user.profile_image_url
-        # user_id = '5082d4f9-59ac-4ac8-90c2-be5a1bc1073a'
-        # nickname = 'ㄹㅎ'
-        # user_profile = 'https://lh3.googleusercontent.com/a/ACg8ocJ0prZA199gyifDp2grbuGoCHqHrQmMmL-iAVaFgMETs-T1KQ=s96-c'
         req_data = {
-            "lanuage" : post_data.language,
             "code" : post_data.code,
-            "meta" : {
-                "filename" : None,
-                "author_id" : user_id,
-                "client_version" : None
-            }
+            "language" : post_data.language
         }
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -59,19 +49,25 @@ async def create_new_post(post_data:PostCreate, user:User)->Post:
     """
     ai_result: 
     """
-    is_safe = ai_result.get("safe")
-    #risk_score = ai_result.get("risk_score", 0)
+    decision = ai_result.get("decision") # allow | sandbox | block
     vibe_emojis = ai_result.get("emojis", [])
-    if not is_safe:
+    
+    if decision == "block":
+        reasons = ai_result.get("reasons", [])
+        block_reason_detail = {
+            "code" : "CODE_REJECTED",
+            "message" : "This code is not allowed due to security policy.",
+            "reasons" : reasons
+        }
         raise HTTPException(
             status_code=400,
-            detail="This code is not allowed due to security policy"
+            detail=block_reason_detail
         )
     new_post = Post(
         **post_data.model_dump(),
         authorId=user_id,
         authorNickname=nickname,
-        authorProfileImage=profile_url,
+        authorProfileImageUrl=profile_url,
         vibeEmojis=vibe_emojis,
         comments=[]
     )

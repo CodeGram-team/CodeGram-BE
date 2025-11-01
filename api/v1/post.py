@@ -14,20 +14,22 @@ from utils.current_user import get_current_user
 
 post_router = APIRouter(prefix="/api/v1", tags=["Post code snippet"])
 
-@post_router.post("/posts", response_model=Post)
+@post_router.post("/posts", response_model=PostResponse)
 async def new_post(post_data:PostCreate, 
                    user:User=Depends(get_current_user))->Post:
     """
     Args:
-    - post_data:
-    - user: Request Header 'Authorization' : 'access token' 
+    - post_data: PostCreate schema 
+    - user: Request Header 'Authorization' : 'access token'
+    Returns:
+    - PostResponse: 
     """
     
     return await create_new_post(post_data=post_data, 
                                  user=user)
     
-# @post_router.post("/posts", response_model=Post)
-# async def new_post(post_data:PostCreate)->Post:
+# @post_router.post("/posts", response_model=PostResponse)
+# async def new_post(post_data:PostCreate)->PostResponse:
     
 #     return await create_new_post(post_data=post_data)
     
