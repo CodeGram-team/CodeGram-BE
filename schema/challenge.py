@@ -8,6 +8,7 @@ class DifficultyLevel(str, Enum):
     INTERVIEW = "interview"
 
 class ChallengeBase(BaseModel):
+    title:Text
     problem_id : int
     difficulty : Optional[DifficultyLevel] = None
     
@@ -15,6 +16,7 @@ class ChallengeBase(BaseModel):
         from_attributes : True
     
 class ChallengeResponse(ChallengeBase):
+    title:Text
     question : Text
     starter_code : Optional[str] = None
     url : Optional[str] = None

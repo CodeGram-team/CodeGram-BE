@@ -12,3 +12,4 @@ class Challenge(Base):
     starter_code = Column(Text)
     solutions = Column(Text)
     dataset_type = Column(String, nullable=False)
+    title = Column(String)
