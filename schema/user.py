@@ -28,3 +28,6 @@ class UserProfileResponse(BaseModel):
     class Config:
         from_attributes = True
         json_encoders = {UUID:str}
+
+class MyProfileResponse(UserProfileResponse):
+    email: str
