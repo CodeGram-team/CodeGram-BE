@@ -9,6 +9,7 @@ from schema.post import PostCreate
 load_dotenv()
 
 AI_SERVER=os.getenv("AI_SERVER")
+ALLOWED_LANGUAGES = {"python", "c", "cpp", "nodejs", "java"}
 
 async def create_new_post(post_data:PostCreate, user:User)->Post:
     """
@@ -21,6 +22,11 @@ async def create_new_post(post_data:PostCreate, user:User)->Post:
     Returns:
     - new_post: 작성된 게시글 
     """
+    if post_data.language not in ALLOWED_LANGUAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported Language: {post_data.language}. Supported language are {list(ALLOWED_LANGUAGES)}" 
+        )
     # STEP 1. [POST] user's code to AI Server for analyzing result and matching vibe emojis
     try:
         user_id = user.id

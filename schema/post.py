@@ -12,7 +12,7 @@ class CommentCreate(CommentBase):
     pass
 
 class CommentResponse(CommentBase):
-    commentId: PydanticObjectId = Field(..., alias="_id")
+    id: PydanticObjectId = Field(..., alias="commentId")
     authorId: UUID
     authorNickname: str
     createdAt: datetime

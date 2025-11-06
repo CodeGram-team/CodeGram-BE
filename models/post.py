@@ -4,7 +4,6 @@ from pydantic import Field, BaseModel
 from datetime import datetime, timezone
 from typing import List, Optional, Annotated
 from uuid import UUID
-# from bson import ObjectId
 
 class Comment(BaseModel):
     commentId: PydanticObjectId = Field(default_factory=PydanticObjectId)
@@ -42,8 +41,8 @@ class Post(Document):
         name = "posts" 
         
 class Like(Document):
-    userId: Annotated[UUID, Indexed(unique=True)]
-    postId: Annotated[PydanticObjectId, Indexed(unique=True)]
+    user_id: Annotated[UUID, Indexed()] = Field(alias="userId")
+    post_id: Annotated[PydanticObjectId, Indexed()] = Field(alias="postId")
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Settings:
@@ -51,3 +50,4 @@ class Like(Document):
         indexes = [
             IndexModel([("userId",1),("postId",1)], unique=True)
         ]
+        populate_by_name=True

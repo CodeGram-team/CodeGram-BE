@@ -61,8 +61,11 @@ async def run_vectorization(model:SentenceTransformer):
                 print("No valid vector to insert")
                 return
             
-            # STEP 3. PostgreSQL에 일괄 삽입
+            # STEP 3. PostgreSQL에 일괄 삽입 -> post_id가 존재(충돌)하면 아무것도 하지 않음
             stmt = insert(PostVector).values(vectors_to_insert)
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=['post_id']
+            )
             
             await session.execute(stmt)
             await session.commit()

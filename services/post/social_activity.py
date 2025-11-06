@@ -1,7 +1,7 @@
 from uuid import UUID
 from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError
-from models.post import Like,Post, Comment
+from models.post import Post, Comment, Like
 from models.user import User
 from schema.post import CommentCreate
 
@@ -14,9 +14,9 @@ async def toggle_like(post_id:PydanticObjectId, user_id:UUID):
     3. 기록이 없으면 좋아요 추가 (like 생성, post.likesCount 1 증가)
     """
     existing_like = await Like.find_one(
-        Like.userId == user_id,
-        Like.postId == post_id
-    )
+            {"userId":user_id, "postId":post_id}
+        )
+    
     if existing_like:
         await existing_like.delete()
         
@@ -29,7 +29,8 @@ async def toggle_like(post_id:PydanticObjectId, user_id:UUID):
         user_liked = False
     else:
         try:
-            like = Like(userId=user_id, postId=post_id)
+            like = Like(user_id=user_id, post_id=post_id)
+
             await like.insert()
             
             updated_post = await Post.find_one(

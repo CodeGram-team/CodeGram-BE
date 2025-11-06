@@ -9,7 +9,7 @@ async def search_posts(*,
                        tags:Optional[List[str]]=None,
                        text:Optional[str]=None,
                        skip:int=0,
-                       limit:int=0)->List[Post]:
+                       limit:int=10)->List[Post]:
     """
     다중 조건에 따라 게시물 검색 후 페이지네이션 적용
     """

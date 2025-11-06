@@ -2,7 +2,7 @@ from pymongo import AsyncMongoClient
 from beanie import init_beanie
 from dotenv import load_dotenv
 import os
-from models.post import Post
+from models.post import Post, Like
 
 load_dotenv()
 MONGODB_URL=os.getenv("MONGODB_URL")
@@ -19,7 +19,7 @@ async def init_db():
         db_client.client = AsyncMongoClient(MONGODB_URL)
         db_client.db = db_client.client.get_database("codegram")
         await db_client.client.server_info()
-        await init_beanie(database=db_client.db, document_models=[Post])
+        await init_beanie(database=db_client.db, document_models=[Post, Like])
         print("MongoDB Connection success")
         
     except Exception as e:

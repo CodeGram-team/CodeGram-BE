@@ -11,9 +11,9 @@ async def get_like_post_ids(user_id:UUID):
     """
     특정 사용자가 '좋아요'를 누른 모든 게시물의 ID Set을 반환
     """
-    liked_posts = await Like.find(Like.userId == user_id).to_list()
+    liked_posts = await Like.find(Like.user_id == user_id).to_list()
     
-    return {str(post.postId) for post in liked_posts}
+    return {str(post.post_id) for post in liked_posts}
 
 async def get_user_profile_vector(user_id:UUID, 
                                   db:AsyncSession):
@@ -61,4 +61,4 @@ async def get_recommended_post_ids(profile_vector:np.ndarray,
     
     result = await db.execute(query)
     
-    return result
+    return result.scalars().all()
