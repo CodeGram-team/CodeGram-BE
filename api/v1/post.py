@@ -85,7 +85,7 @@ async def comments(comment:CommentCreate,
                             detail="Post ID not found")
     return result
 
-@post_router.post("/search", response_model=List[Post])
+@post_router.get("/search", response_model=List[Post])
 async def search_post(
     vibe_emojis:Optional[List[str]]=Query(
         default=None, 
