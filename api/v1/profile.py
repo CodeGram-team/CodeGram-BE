@@ -9,6 +9,29 @@ from schema.user import UserProfileResponse, MyProfileResponse
 
 profile_router = APIRouter(prefix="/api/v1", tags=["User Profile Lookup"])
 
+@profile_router.get("/profile/me", response_model=MyProfileResponse)
+async def get_my_profile(current_user:User=Depends(get_current_user)):
+    user_posts = await get_posts_by_author_id(author_id=current_user.id)
+
+    user_data_dict = {
+        "id" : current_user.id,
+        "nickname" : current_user.nickname,
+        "username" : current_user.username,
+        "profile_image_url" : current_user.profile_image_url,
+        "created_at" : current_user.created_at,
+        "email" : current_user.email
+    }
+    
+    posts_as_dict = [post.model_dump(by_alias=True) for post in user_posts]
+
+    response_data = {
+        **user_data_dict,
+        "posts" : posts_as_dict
+    }
+    
+    return MyProfileResponse(**response_data)
+
+
 @profile_router.get("/profile/{nickname}", response_model=UserProfileResponse)
 async def get_user_profile(nickname:str=Path(...), 
                            db:AsyncSession=Depends(get_db)):
@@ -26,7 +49,8 @@ async def get_user_profile(nickname:str=Path(...),
         "id" : user.id,
         "nickname" : user.nickname,
         "username" : user.username,
-        "profile_image_url" : user.profile_image_url
+        "profile_image_url" : user.profile_image_url,
+        "created_at" : user.created_at
     }
     
     posts_as_dict = [post.model_dump(by_alias=True) for post in user_posts]
@@ -37,24 +61,3 @@ async def get_user_profile(nickname:str=Path(...),
     }
     
     return UserProfileResponse(**response_data)
-
-@profile_router.get("/profile/me", response_model=MyProfileResponse)
-async def get_my_profile(current_user:User=Depends(get_current_user)):
-    user_posts = await get_posts_by_author_id(author_id=current_user.id)
-
-    user_data_dict = {
-        "id" : current_user.id,
-        "nickname" : current_user.nickname,
-        "username" : current_user.username,
-        "profile_image_url" : current_user.profile_image_url,
-        "email" : current_user.email
-    }
-    
-    posts_as_dict = [post.model_dump(by_alias=True) for post in user_posts]
-
-    response_data = {
-        **user_data_dict,
-        "posts" : posts_as_dict
-    }
-    
-    return MyProfileResponse(**response_data)
